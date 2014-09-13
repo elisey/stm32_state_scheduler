@@ -4,6 +4,7 @@
 #include "uart.h"
 #include <stdio.h>
 #include <stdbool.h>
+#include "led_fsm.h"
 void delay();
 void machine1_state1_in();
 void machine1_state1();
@@ -20,19 +21,17 @@ machine_t machineTest;
 int main(void)
 {
 	UART_Init();
-	machineTest = StateScheduler_RegisterMachine(3);
-	StateScheduler_InitStateData(machineTest, 0, machine1_state1_in, machine1_state1, machine1_state1_out);
-	StateScheduler_InitStateData(machineTest, 1, machine1_state2_in, machine1_state2, machine1_state2_out);
-	StateScheduler_InitStateData(machineTest, 2, machine1_state3_in, machine1_state3, machine1_state3_out);
+	//machineTest = StateScheduler_RegisterMachine(3);
+	//StateScheduler_InitStateData(machineTest, 0, machine1_state1_in, machine1_state1, machine1_state1_out);
+	//StateScheduler_InitStateData(machineTest, 1, machine1_state2_in, machine1_state2, machine1_state2_out);
+	//StateScheduler_InitStateData(machineTest, 2, machine1_state3_in, machine1_state3, machine1_state3_out);
 
-	Led_t greenLed;
-	Led_Init(&greenLed, GPIOC, GPIO_Pin_9);
-	Led_SetState(&greenLed, led_on);
+	LedFsm_Init();
     while(1)
     {
     	StateScheduler_Process();
-    	printf("-----------new iteration-----------\r\n");
-    	delay();
+    	//printf("-----------new iteration-----------\r\n");
+    	//delay();
     }
 }
 
