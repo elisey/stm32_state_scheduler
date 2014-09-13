@@ -53,13 +53,21 @@ void StateScheduler_Process()
 		if (machines[i].stateGoTo != (-1))	{
 			// была смена состояния
 			if ( (machines[i].currentState != (-1)) && machines[i].stateDataTable[machines[i].currentState].outFunc != NULL)	{
-				machines[i].stateDataTable[machines[i].currentState].outFunc();
+				machines[i].stateDataTable[machines[i].currentState].outFunc(); //если при выходе из состояния произошла
+																				//смена состояния, то будет вход в новое состояние
 			}
+			machines[i].currentState = machines[i].stateGoTo;
+			int prevStateToGo = machines[i].stateGoTo;
 			if (machines[i].stateDataTable[machines[i].stateGoTo].inFunc != NULL)	{
 				machines[i].stateDataTable[machines[i].stateGoTo].inFunc();
 			}
 
-			machines[i].currentState = machines[i].stateGoTo;
+			if (prevStateToGo != machines[i].stateGoTo)	{ // при входе в состояние была смена состояния. Не выполняется
+														 //функция работы в состоянии, а при следующей итерации будет выход из
+														 // состояния и вход в другое состояние
+				continue;
+			}
+
 			machines[i].stateGoTo = (-1);
 		}
 		if (machines[i].stateDataTable[machines[i].currentState].func != NULL)	{
