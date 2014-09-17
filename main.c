@@ -20,6 +20,7 @@ machine_t machineTest;
 
 int main(void)
 {
+	StateSchedulerHAL_Init();
 	UART_Init();
 	//machineTest = StateScheduler_RegisterMachine(3);
 	//StateScheduler_InitStateData(machineTest, 0, machine1_state1_in, machine1_state1, machine1_state1_out);

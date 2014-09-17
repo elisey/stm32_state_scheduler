@@ -14,10 +14,14 @@ typedef struct	{
 	int numOfStates;
 	int currentState;
 	int stateGoTo;
+	unsigned int counter;
 } machineData_t;
 
 static machineData_t machines[StateSchedulerNUM_OF_MACHINES];
 static int numOfMachines = 0;
+
+
+void prv_onTImer();
 
 
 void StateScheduler_InitStateData(machine_t machine, int stateIndex, void (*inFunc)(void), void (*func)(void), void (*outFunc)(void))
@@ -37,6 +41,7 @@ machine_t StateScheduler_RegisterMachine( int numOfStates)
 	machines[currentMachineIndex].numOfStates = numOfStates;
 	machines[currentMachineIndex].currentState = -1;
 	machines[currentMachineIndex].stateGoTo = 0;
+	machines[currentMachineIndex].counter = 0;
 	return currentMachineIndex;
 }
 
@@ -46,10 +51,18 @@ void StateScheduler_SetState(machine_t machineIdx, int newState)
 	machines[machineIdx].stateGoTo = newState;
 }
 
+void StateScheduler_BlockByTime(machine_t machineIdx, unsigned int time)
+{
+	machines[machineIdx].counter = time;
+}
+
 void StateScheduler_Process()
 {
 	int i;
 	for (i = 0; i < numOfMachines; ++i) {
+		if (machines[i].counter != 0)	{
+			continue;
+		}
 		if (machines[i].stateGoTo != (-1))	{
 			// была смена состояния
 			if ( (machines[i].currentState != (-1)) && machines[i].stateDataTable[machines[i].currentState].outFunc != NULL)	{
@@ -74,5 +87,15 @@ void StateScheduler_Process()
 			machines[i].stateDataTable[machines[i].currentState].func();
 		}
 
+	}
+}
+
+void prv_onTImer()
+{
+	int i;
+	for (i = 0; i < numOfMachines; ++i) {
+		if (machines[i].counter != 0)	{
+			machines[i].counter--;
+		}
 	}
 }

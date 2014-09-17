@@ -32,7 +32,9 @@ static void prv_state_init()
 static void prv_state_tougle_led()
 {
 	Led_Tougle(&greenLed);
-	StateScheduler_SetState(ledMachine, state_wait);
+	StateScheduler_BlockByTime(ledMachine, 500);
+	//StateScheduler_SetState(ledMachine, state_wait);
+
 }
 
 static void prv_state_wait()
