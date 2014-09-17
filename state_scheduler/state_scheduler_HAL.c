@@ -11,6 +11,16 @@ void StateSchedulerHAL_Init()
 	prv_timerInit();
 }
 
+void StateSchedulerHAL_DisableIrq()
+{
+	NVIC_DisableIRQ( TimerService_IRQn );
+}
+
+void StateSchedulerHAL_EnableIrq()
+{
+	NVIC_EnableIRQ( TimerService_IRQn );
+}
+
 static void prv_timerInit()
 {
 	RCC_APB1PeriphClockCmd( TimerService_RCC_APB1, ENABLE );

@@ -1,4 +1,5 @@
 #include "state_scheduler.h"
+#include "state_scheduler_HAL.h"
 #include "stm32f10x.h"
 #include <string.h>
 #include <stdlib.h>
@@ -14,7 +15,7 @@ typedef struct	{
 	int numOfStates;
 	int currentState;
 	int stateGoTo;
-	unsigned int counter;
+	counter_t counter;
 } machineData_t;
 
 static machineData_t machines[StateSchedulerNUM_OF_MACHINES];
@@ -22,7 +23,13 @@ static int numOfMachines = 0;
 
 
 void prv_onTImer();
+static void prv_setCounter(machine_t machineIdx, counter_t counter);
+static counter_t prv_getCounter(machine_t machineIdx);
 
+void StateScheduler_Init()
+{
+	StateSchedulerHAL_Init();
+}
 
 void StateScheduler_InitStateData(machine_t machine, int stateIndex, void (*inFunc)(void), void (*func)(void), void (*outFunc)(void))
 {
@@ -51,16 +58,17 @@ void StateScheduler_SetState(machine_t machineIdx, int newState)
 	machines[machineIdx].stateGoTo = newState;
 }
 
-void StateScheduler_BlockByTime(machine_t machineIdx, unsigned int time)
+void StateScheduler_BlockByTime(machine_t machineIdx, counter_t time)
 {
-	machines[machineIdx].counter = time;
+	prv_setCounter(machineIdx, time);
 }
 
 void StateScheduler_Process()
 {
 	int i;
 	for (i = 0; i < numOfMachines; ++i) {
-		if (machines[i].counter != 0)	{
+		counter_t counter = prv_getCounter(i);
+		if (counter != 0)	{
 			continue;
 		}
 		if (machines[i].stateGoTo != (-1))	{
@@ -98,4 +106,20 @@ void prv_onTImer()
 			machines[i].counter--;
 		}
 	}
+}
+
+static void prv_setCounter(machine_t machineIdx, unsigned int counter)
+{
+	StateSchedulerHAL_DisableIrq();
+	machines[machineIdx].counter = counter;
+	StateSchedulerHAL_EnableIrq();
+}
+
+static unsigned int prv_getCounter(machine_t machineIdx)
+{
+	counter_t time;
+	StateSchedulerHAL_DisableIrq();
+	time = machines[machineIdx].counter;
+	StateSchedulerHAL_EnableIrq();
+	return time;
 }
