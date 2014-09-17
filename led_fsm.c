@@ -20,6 +20,7 @@ void LedFsm_Init()
 	StateScheduler_InitStateData(ledMachine, state_init, 0, prv_state_init, 0);
 	StateScheduler_InitStateData(ledMachine, state_tougle_led, 0, prv_state_tougle_led, 0);
 	StateScheduler_InitStateData(ledMachine, state_wait, 0, prv_state_wait, 0);
+	StateScheduler_SetState(ledMachine, state_init);
 }
 
 
@@ -32,7 +33,7 @@ static void prv_state_init()
 static void prv_state_tougle_led()
 {
 	Led_Tougle(&greenLed);
-	StateScheduler_BlockByTime(ledMachine, 500);
+	StateScheduler_SetStateByTime(ledMachine,state_tougle_led, 250);
 	//StateScheduler_SetState(ledMachine, state_wait);
 
 }

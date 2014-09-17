@@ -6,6 +6,8 @@
 #define TimerService_IRQn						TIM2_IRQn
 #define TimerService_IRQHandler					TIM2_IRQHandler
 
-void StateSchedulerHAL_Init();
+void StateSchedulerHAL_TimerInit();
 void StateSchedulerHAL_DisableIrq();
 void StateSchedulerHAL_EnableIrq();
+void StateSchedulerHAL_Run();
+void StateSchedulerHAL_Stop();

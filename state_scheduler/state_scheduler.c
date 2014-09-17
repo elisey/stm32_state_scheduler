@@ -1,8 +1,10 @@
 #include "state_scheduler.h"
 #include "state_scheduler_HAL.h"
-#include "stm32f10x.h"
-#include <string.h>
-#include <stdlib.h>
+#include "stm32f10x.h"	//for assert_param
+#include <stdlib.h>		//for dinamic memory
+#include <stdbool.h>
+
+#define NO_STATE	(-1)
 
 typedef struct	{
 	void (*inFunc)(void);
@@ -12,99 +14,149 @@ typedef struct	{
 
 typedef struct	{
 	stateData_t *stateDataTable;
-	int numOfStates;
+	uint8_t numOfStates;
 	int currentState;
 	int stateGoTo;
+	bool stateChanged;
 	counter_t counter;
 } machineData_t;
 
-static machineData_t machines[StateSchedulerNUM_OF_MACHINES];
+static machineData_t machines[StateSchedulerMAX_NUM_OF_MACHINES];
 static int numOfMachines = 0;
 
+void StateScheduler_onTimer();
 
-void prv_onTImer();
+static bool machineIsBlocked(int machineIndex);
+static void prv_processMachine(int machineIndex);
+static void prv_callInFunction(int machineIndex, int state);
+static void prv_callFunction(int machineIndex, int state);
+static void prv_callOutFunction(int machineIndex, int state);
+static void prv_tryRunFunction(void (*outFunc)(void));
 static void prv_setCounter(machine_t machineIdx, counter_t counter);
 static counter_t prv_getCounter(machine_t machineIdx);
 
-void StateScheduler_Init()
+machine_t StateScheduler_RegisterMachine( uint8_t numOfStates)
 {
-	StateSchedulerHAL_Init();
-}
-
-void StateScheduler_InitStateData(machine_t machine, int stateIndex, void (*inFunc)(void), void (*func)(void), void (*outFunc)(void))
-{
-	machines[machine].stateDataTable[stateIndex].inFunc = inFunc;
-	machines[machine].stateDataTable[stateIndex].func = func;
-	machines[machine].stateDataTable[stateIndex].outFunc = outFunc;
-}
-
-machine_t StateScheduler_RegisterMachine( int numOfStates)
-{
-	assert_param(numOfMachines < StateSchedulerNUM_OF_MACHINES);
+	assert_param(numOfMachines < StateSchedulerMAX_NUM_OF_MACHINES);
 	machine_t currentMachineIndex = numOfMachines;
 	numOfMachines++;
 
 	machines[currentMachineIndex].stateDataTable = calloc(numOfStates, sizeof(stateData_t) );
 	machines[currentMachineIndex].numOfStates = numOfStates;
-	machines[currentMachineIndex].currentState = -1;
-	machines[currentMachineIndex].stateGoTo = 0;
+	machines[currentMachineIndex].currentState = NO_STATE;
+	machines[currentMachineIndex].stateGoTo = NO_STATE;
+	machines[currentMachineIndex].stateChanged = true;
 	machines[currentMachineIndex].counter = 0;
 	return currentMachineIndex;
 }
 
-void StateScheduler_SetState(machine_t machineIdx, int newState)
+void StateScheduler_InitStateData(machine_t machineIndex, int stateIndex, void (*inFunc)(void), void (*func)(void), void (*outFunc)(void))
 {
-	assert_param(newState < machines[machineIdx].numOfStates);
-	machines[machineIdx].stateGoTo = newState;
+	machines[machineIndex].stateDataTable[stateIndex].inFunc = inFunc;
+	machines[machineIndex].stateDataTable[stateIndex].func = func;
+	machines[machineIndex].stateDataTable[stateIndex].outFunc = outFunc;
 }
 
-void StateScheduler_BlockByTime(machine_t machineIdx, counter_t time)
+void StateScheduler_SetState(machine_t machineIndex, int newState)
 {
-	prv_setCounter(machineIdx, time);
+	assert_param(newState < machines[machineIndex].numOfStates);
+	machines[machineIndex].stateGoTo = newState;
+	machines[machineIndex].stateChanged = true;
+}
+
+void StateScheduler_BlockByTime(machine_t machineIndex, counter_t time)
+{
+	prv_setCounter(machineIndex, time);
+}
+
+void StateScheduler_SetStateByTime(machine_t machineIndex, int newState, counter_t time)
+{
+	StateScheduler_SetState(machineIndex, newState);
+	StateScheduler_BlockByTime(machineIndex, time);
 }
 
 void StateScheduler_Process()
 {
 	int i;
 	for (i = 0; i < numOfMachines; ++i) {
-		counter_t counter = prv_getCounter(i);
-		if (counter != 0)	{
+		if (machineIsBlocked(i))	{
 			continue;
 		}
-		if (machines[i].stateGoTo != (-1))	{
-			// была смена состояния
-			if ( (machines[i].currentState != (-1)) && machines[i].stateDataTable[machines[i].currentState].outFunc != NULL)	{
-				machines[i].stateDataTable[machines[i].currentState].outFunc(); //если при выходе из состояния произошла
-																				//смена состояния, то будет вход в новое состояние
-			}
-			machines[i].currentState = machines[i].stateGoTo;
-			int prevStateToGo = machines[i].stateGoTo;
-			if (machines[i].stateDataTable[machines[i].stateGoTo].inFunc != NULL)	{
-				machines[i].stateDataTable[machines[i].stateGoTo].inFunc();
-			}
-
-			if (prevStateToGo != machines[i].stateGoTo)	{ // при входе в состояние была смена состояния. Не выполняется
-														 //функция работы в состоянии, а при следующей итерации будет выход из
-														 // состояния и вход в другое состояние
-				continue;
-			}
-
-			machines[i].stateGoTo = (-1);
-		}
-		if (machines[i].stateDataTable[machines[i].currentState].func != NULL)	{
-			machines[i].stateDataTable[machines[i].currentState].func();
-		}
-
+		prv_processMachine(i);
 	}
 }
 
-void prv_onTImer()
+void StateScheduler_TimerInitAndRun()
 {
-	int i;
-	for (i = 0; i < numOfMachines; ++i) {
-		if (machines[i].counter != 0)	{
-			machines[i].counter--;
+	bool isInitialized = false;
+	if (isInitialized == false)	{
+		isInitialized = true;
+		StateSchedulerHAL_TimerInit();
+	}
+	StateSchedulerHAL_Run();
+}
+void StateScheduler_TimerStop()
+{
+	StateSchedulerHAL_Stop();
+}
+
+static bool machineIsBlocked(int machineIndex)
+{
+	counter_t counter = prv_getCounter(machineIndex);
+	if (counter != 0)	{
+		return true;
+	}
+	return false;
+}
+
+static void prv_processMachine(int machineIndex)
+{
+	machineData_t *machine = &(machines[machineIndex]);
+
+	if (machine->stateChanged == true)	{
+		if (machine->currentState != (NO_STATE))	{
+			prv_callOutFunction(machineIndex, machine->currentState);
 		}
+		machine->currentState =machine->stateGoTo;
+		int prevStateToGo = machine->stateGoTo;
+
+		prv_callInFunction(machineIndex, machine->stateGoTo);
+		if (prevStateToGo != machine->stateGoTo)	{ // при входе в состояние была смена состояния. Не выполняется
+													 //функция работы в состоянии, а при следующей итерации будет выход из
+													 // состояния и вход в другое состояние
+			return;
+		}
+
+		machine->stateChanged = false;				//окончательно вошли в состояние
+	}
+	prv_callFunction(machineIndex, machine->currentState);
+}
+
+static void prv_callInFunction(int machineIndex, int state)
+{
+	assert_param(state < machines[machineIndex].numOfStates);
+
+	prv_tryRunFunction(machines[machineIndex].stateDataTable[state].inFunc);
+}
+
+static void prv_callFunction(int machineIndex, int state)
+{
+	assert_param(state < machines[machineIndex].numOfStates);
+
+	prv_tryRunFunction(machines[machineIndex].stateDataTable[state].func);
+}
+
+static void prv_callOutFunction(int machineIndex, int state)
+{
+	assert_param(state < machines[machineIndex].numOfStates);
+
+	prv_tryRunFunction(machines[machineIndex].stateDataTable[state].outFunc);
+}
+
+static void prv_tryRunFunction(void (*ptrFunc)(void))
+{
+	if (ptrFunc != NULL)	{
+		ptrFunc();
 	}
 }
 
@@ -122,4 +174,15 @@ static unsigned int prv_getCounter(machine_t machineIdx)
 	time = machines[machineIdx].counter;
 	StateSchedulerHAL_EnableIrq();
 	return time;
+}
+
+void StateScheduler_onTimer()
+{
+	int num = numOfMachines;	//доступ к переменной из другого потока
+	int i;
+	for (i = 0; i < num; ++i) {
+		if (machines[i].counter != 0)	{
+			machines[i].counter--;
+		}
+	}
 }
