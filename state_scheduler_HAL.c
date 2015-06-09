@@ -12,8 +12,8 @@ void StateSchedulerHAL_TimerInit()
 	TIM_TimeBaseInitTypeDef timerStruct;
 	timerStruct.TIM_ClockDivision = 0;
 	timerStruct.TIM_CounterMode = TIM_CounterMode_Up;
-	timerStruct.TIM_Period = 2000;
-	timerStruct.TIM_Prescaler = (12 - 1);
+	timerStruct.TIM_Period = TimerService_TIM_Period;
+	timerStruct.TIM_Prescaler = TimerService_TIM_Prescaler;
 	TIM_TimeBaseInit( TimerService_TIMx, &timerStruct );
 
 	TIM_ITConfig( TimerService_TIMx, TIM_IT_Update, ENABLE );
