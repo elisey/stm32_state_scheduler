@@ -17,3 +17,5 @@ void StateScheduler_SetState(machine_t machineIndex, int newState);
 void StateScheduler_BlockByTime(machine_t machineIndex, counter_t time);
 void StateScheduler_Unblock(machine_t machineIndex);
 void StateScheduler_SetStateByTime(machine_t machineIndex, int newState, counter_t time);
+
+counter_t StateScheduler_GetUpTimeMs();

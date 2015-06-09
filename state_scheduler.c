@@ -4,6 +4,8 @@
 #include <stdlib.h>		//for dinamic memory
 #include <stdbool.h>
 
+static counter_t upTime_ms = 0;
+
 #define NO_STATE	(-1)
 
 typedef struct	{
@@ -78,6 +80,11 @@ void StateScheduler_SetStateByTime(machine_t machineIndex, int newState, counter
 {
 	StateScheduler_SetState(machineIndex, newState);
 	StateScheduler_BlockByTime(machineIndex, time);
+}
+
+counter_t StateScheduler_GetUpTimeMs()
+{
+	return upTime_ms;
 }
 
 void StateScheduler_Process()
@@ -183,6 +190,7 @@ static unsigned int prv_getCounter(machine_t machineIdx)
 
 void StateScheduler_onTimer()
 {
+	upTime_ms++;
 	int num = numOfMachines;	//доступ к переменной из другого потока
 	int i;
 	for (i = 0; i < num; ++i) {
