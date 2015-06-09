@@ -1,4 +1,6 @@
 #include "state_scheduler_HAL.h"
+#include "state_scheduler_config.h"
+
 #include "stm32f10x.h"
 
 void TimerService_IRQHandler();

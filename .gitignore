@@ -5,4 +5,4 @@
 *.pbxproj
 *.cogui
 *.comarker
-stm32_state_scheduler/
+example/
