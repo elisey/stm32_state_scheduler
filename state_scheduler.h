@@ -3,6 +3,7 @@
 
 typedef int machine_t;
 typedef unsigned int counter_t;
+#define MAX_COUNTER		(0xFFFFFFFF)
 
 #define StateSchedulerMAX_NUM_OF_MACHINES	10
 
@@ -15,6 +16,7 @@ void StateScheduler_InitStateData(machine_t machineIndex, int stateIndex, void (
 
 void StateScheduler_SetState(machine_t machineIndex, int newState);
 void StateScheduler_BlockByTime(machine_t machineIndex, counter_t time);
+void StateScheduler_Block(machine_t machineIndex);
 void StateScheduler_Unblock(machine_t machineIndex);
 void StateScheduler_SetStateByTime(machine_t machineIndex, int newState, counter_t time);
 

@@ -71,6 +71,11 @@ void StateScheduler_BlockByTime(machine_t machineIndex, counter_t time)
 	prv_setCounter(machineIndex, time);
 }
 
+void StateScheduler_Block(machine_t machineIndex)
+{
+	prv_setCounter(machineIndex, MAX_COUNTER);
+}
+
 void StateScheduler_Unblock(machine_t machineIndex)
 {
 	prv_setCounter(machineIndex, 0);
@@ -194,7 +199,7 @@ void StateScheduler_onTimer()
 	int num = numOfMachines;	//доступ к переменной из другого потока
 	int i;
 	for (i = 0; i < num; ++i) {
-		if (machines[i].counter != 0)	{
+		if ((machines[i].counter != 0) && (machines[i].counter != MAX_COUNTER ) )	{
 			machines[i].counter--;
 		}
 	}
