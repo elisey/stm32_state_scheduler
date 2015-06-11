@@ -105,7 +105,7 @@ void StateScheduler_Process()
 
 void StateScheduler_TimerInitAndRun()
 {
-	bool isInitialized = false;
+	static bool isInitialized = false;
 	if (isInitialized == false)	{
 		isInitialized = true;
 		StateSchedulerHAL_TimerInit();
