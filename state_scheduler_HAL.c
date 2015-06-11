@@ -19,6 +19,7 @@ void StateSchedulerHAL_TimerInit()
 	TIM_ITConfig( TimerService_TIMx, TIM_IT_Update, ENABLE );
 	//TIM_Cmd( TimerService_TIMx, ENABLE );
 
+	NVIC_SetPriority(TimerService_IRQn, TImerService_IRQPriority);
 	NVIC_EnableIRQ( TimerService_IRQn );
 
 	DBGMCU->CR |= TImerService_DBGMCU_CR_DBG_TIMx_STOP;
