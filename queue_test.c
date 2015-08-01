@@ -1,5 +1,5 @@
 #include "queue.h"
-#include "debug.h"
+#include <assert.h>
 
 void Queue_test()
 {

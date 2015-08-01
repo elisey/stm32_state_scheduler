@@ -1,7 +1,7 @@
 #include "queue.h"
 #include <stdlib.h>
 #include <string.h>
-#include "debug.h"
+#include <assert.h>
 
 static uint16_t calculateTailIndex(queue_t *this);
 

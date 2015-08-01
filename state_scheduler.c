@@ -1,9 +1,8 @@
 #include "state_scheduler.h"
 #include "state_scheduler_HAL.h"
-#include "stm32f10x.h"	//for assert_param
 #include <stdlib.h>		//for dinamic memory
 #include <stdbool.h>
-
+#include <assert.h>
 static counter_t upTime_ms = 0;
 
 #define NO_STATE	(-1)
@@ -39,7 +38,7 @@ static counter_t prv_getCounter(machine_t machineIdx);
 
 machine_t StateScheduler_RegisterMachine( uint8_t numOfStates)
 {
-	assert_param(numOfMachines < StateSchedulerMAX_NUM_OF_MACHINES);
+	assert(numOfMachines < StateSchedulerMAX_NUM_OF_MACHINES);
 	machine_t currentMachineIndex = numOfMachines;
 	numOfMachines++;
 
@@ -61,7 +60,7 @@ void StateScheduler_InitStateData(machine_t machineIndex, int stateIndex, void (
 
 void StateScheduler_SetState(machine_t machineIndex, int newState)
 {
-	assert_param(newState < machines[machineIndex].numOfStates);
+	assert(newState < machines[machineIndex].numOfStates);
 	machines[machineIndex].stateGoTo = newState;
 	machines[machineIndex].stateChanged = true;
 }
@@ -151,21 +150,21 @@ static void prv_processMachine(int machineIndex)
 
 static void prv_callInFunction(int machineIndex, int state)
 {
-	assert_param(state < machines[machineIndex].numOfStates);
+	assert(state < machines[machineIndex].numOfStates);
 
 	prv_tryRunFunction(machines[machineIndex].stateDataTable[state].inFunc);
 }
 
 static void prv_callFunction(int machineIndex, int state)
 {
-	assert_param(state < machines[machineIndex].numOfStates);
+	assert(state < machines[machineIndex].numOfStates);
 
 	prv_tryRunFunction(machines[machineIndex].stateDataTable[state].func);
 }
 
 static void prv_callOutFunction(int machineIndex, int state)
 {
-	assert_param(state < machines[machineIndex].numOfStates);
+	assert(state < machines[machineIndex].numOfStates);
 
 	prv_tryRunFunction(machines[machineIndex].stateDataTable[state].outFunc);
 }
