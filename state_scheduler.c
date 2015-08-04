@@ -1,5 +1,6 @@
 #include "state_scheduler.h"
 #include "state_scheduler_HAL.h"
+#include "state_scheduler_config.h"
 #include <stdlib.h>		//for dinamic memory
 #include <stdbool.h>
 #include <assert.h>

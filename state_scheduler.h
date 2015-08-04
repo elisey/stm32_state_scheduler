@@ -5,8 +5,6 @@ typedef int machine_t;
 typedef unsigned int counter_t;
 #define MAX_COUNTER		(0xFFFFFFFF)
 
-#define StateSchedulerMAX_NUM_OF_MACHINES	10
-
 void StateScheduler_Process();
 void StateScheduler_TimerInitAndRun();
 void StateScheduler_TimerStop();
